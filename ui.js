@@ -1,6 +1,9 @@
 import { gameState } from './globals.js';
 
+// Cache de elementos DOM
 const ammoCountEl = document.getElementById('ammo-count');
+const ammoMaxEl = document.getElementById('ammo-max');
+const weaponNameEl = document.getElementById('weapon-name');
 const reloadMsgEl = document.getElementById('reload-msg');
 const crosshairContainer = document.getElementById('crosshair-container');
 const healthFill = document.getElementById('health-bar-fill');
@@ -9,26 +12,36 @@ const waveEl = document.getElementById('wave-val');
 const blocker = document.getElementById('blocker');
 const menuTitle = document.getElementById('menu-title');
 
+export function updateWeaponInfo(name, current, max) {
+    if(weaponNameEl) weaponNameEl.innerText = name;
+    updateAmmoUI(current, max);
+}
+
 export function updateAmmoUI(current, max) {
-    ammoCountEl.innerText = current;
-    // Atualiza o MAX também visualmente se necessário
-    const maxEl = document.getElementById('ammo-max');
-    if(maxEl) maxEl.innerText = "/ " + max;
-    
-    ammoCountEl.style.color = current <= 5 ? '#ff4444' : '#fff';
+    if(ammoCountEl) {
+        ammoCountEl.innerText = current;
+        ammoCountEl.style.color = current <= (max * 0.2) ? '#ff4444' : '#fff';
+    }
+    if(ammoMaxEl) ammoMaxEl.innerText = "/ " + max;
 }
 
 export function showReloadMsg(show) {
-    reloadMsgEl.style.opacity = show ? '1' : '0';
-    if(show) reloadMsgEl.innerText = "RECARREGANDO...";
+    if(reloadMsgEl) {
+        reloadMsgEl.style.opacity = show ? '1' : '0';
+        if(show) reloadMsgEl.innerText = "RECARREGANDO...";
+    }
 }
 
 export function showNoAmmoMsg() {
-    reloadMsgEl.innerText = "SEM MUNIÇÃO [R]";
-    reloadMsgEl.style.opacity = '1';
+    if(reloadMsgEl) {
+        reloadMsgEl.innerText = "SEM MUNIÇÃO [R]";
+        reloadMsgEl.style.opacity = '1';
+    }
 }
 
 export function updateCrosshair(aimMode) {
+    if(!crosshairContainer) return;
+    
     if(aimMode === 2) {
         crosshairContainer.classList.add('hidden');
     } else {
@@ -42,19 +55,15 @@ export function updateCrosshair(aimMode) {
 }
 
 export function updateHealthUI() {
-    healthFill.style.width = Math.max(0, gameState.health) + '%';
+    if(healthFill) healthFill.style.width = Math.max(0, gameState.health) + '%';
 }
 
 export function updateScoreUI() {
-    scoreEl.innerText = gameState.score;
-}
-
-export function updateWaveUI() {
-    waveEl.innerText = gameState.wave;
+    if(scoreEl) scoreEl.innerText = gameState.score;
 }
 
 export function showGameOver() {
     document.exitPointerLock();
-    menuTitle.innerText = "SINAL PERDIDO";
-    blocker.style.display = 'flex';
+    if(menuTitle) menuTitle.innerText = "SINAL PERDIDO";
+    if(blocker) blocker.style.display = 'flex';
 }
