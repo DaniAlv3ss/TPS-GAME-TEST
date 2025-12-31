@@ -1,6 +1,5 @@
 import * as THREE from 'three';
-import { gameState, CONSTANTS } from './globals.js';
-import { inputs } from './input.js';
+import { gameState, CONSTANTS, inputs } from './globals.js'; // Importa inputs daqui
 import * as UI from './ui.js';
 
 let currentAmmo = CONSTANTS.MAX_AMMO;
@@ -10,7 +9,6 @@ const raycaster = new THREE.Raycaster();
 
 export function createWeapon(parentGroup) {
     const gunMesh = new THREE.Group();
-    // Posição na mão direita (dentro do AimPivot)
     gunMesh.position.set(8, 14, -8); 
     parentGroup.add(gunMesh);
     gameState.gunMesh = gunMesh;
@@ -49,9 +47,8 @@ export function createWeapon(parentGroup) {
     sightGroup.position.set(0, 3.5, -4); 
     gunMesh.add(sightGroup);
     
-    // Base
     sightGroup.add(new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.5, 5), gunMat)); 
-    // Carcaça
+    
     const sideL = new THREE.Mesh(new THREE.BoxGeometry(0.2, 2.5, 4), gunMat);
     sideL.position.set(-1.1, 1.5, 0);
     sightGroup.add(sideL);
@@ -62,7 +59,6 @@ export function createWeapon(parentGroup) {
     top.position.set(0, 2.8, 0.5); 
     sightGroup.add(top);
     
-    // Vidro
     const lensGeo = new THREE.PlaneGeometry(2.0, 2.2);
     const lensMat = new THREE.MeshBasicMaterial({ 
         color: 0x88ccff, transparent: true, opacity: 0.15, side: THREE.DoubleSide, blending: THREE.AdditiveBlending
@@ -71,13 +67,11 @@ export function createWeapon(parentGroup) {
     lens.position.set(0, 1.5, -0.5); 
     sightGroup.add(lens);
 
-    // Retículo
     const reticleMat = createReticleTexture();
     const reticleMesh = new THREE.Mesh(new THREE.PlaneGeometry(1.0, 1.0), reticleMat);
     reticleMesh.position.set(0, 1.5, -0.55); 
     sightGroup.add(reticleMesh);
     
-    // Câmera FPS Point
     const cameraFPSPoint = new THREE.Object3D();
     cameraFPSPoint.position.set(0, 5.0, -1.0); 
     gunMesh.add(cameraFPSPoint);
@@ -138,13 +132,11 @@ function shoot(time) {
     currentAmmo--;
     UI.updateAmmoUI(currentAmmo, CONSTANTS.MAX_AMMO);
 
-    // Muzzle Flash
     const flash = new THREE.PointLight(0xffffaa, 4, 25);
     gameState.gunBarrelTip.getWorldPosition(flash.position);
     gameState.scene.add(flash);
     setTimeout(() => gameState.scene.remove(flash), 40);
 
-    // Bullet
     const bullet = new THREE.Mesh(
         new THREE.SphereGeometry(0.3, 4, 4), 
         new THREE.MeshBasicMaterial({ color: 0xffffaa })
@@ -153,7 +145,6 @@ function shoot(time) {
     gameState.gunBarrelTip.getWorldPosition(startPos);
     bullet.position.copy(startPos);
 
-    // Raycast para mira precisa
     raycaster.setFromCamera(new THREE.Vector2(0, 0), gameState.camera);
     const intersects = raycaster.intersectObjects(gameState.scene.children, true);
     let targetPoint = new THREE.Vector3();
@@ -174,10 +165,8 @@ function shoot(time) {
     }
     if(!found) raycaster.ray.at(1000, targetPoint);
 
-    // Direção
     let dir = new THREE.Vector3().subVectors(targetPoint, startPos).normalize();
     
-    // Spread
     let spread = 0.03; 
     if (inputs.aimMode === 1) spread = 0.004; 
     if (inputs.aimMode === 2) spread = 0.0005; 
@@ -191,7 +180,6 @@ function shoot(time) {
     gameState.bullets.push(bullet);
     gameState.scene.add(bullet);
 
-    // Recuo Visual
     if (inputs.aimMode !== 2) {
         gameState.camera.rotation.x += 0.003;
     }
@@ -205,7 +193,6 @@ export function updateBullets(delta) {
         b.position.add(b.userData.velocity.clone().multiplyScalar(delta));
         
         let hit = false;
-        // Inimigos
         for(let j = gameState.enemies.length - 1; j >= 0; j--) {
             if(b.position.distanceTo(gameState.enemies[j].position) < 14) {
                 const enemy = gameState.enemies[j];
@@ -220,11 +207,9 @@ export function updateBullets(delta) {
                 hit = true; break;
             }
         }
-        // Obstáculos / Chão
         if(!hit && b.position.y < 0) hit = true;
         if(!hit) {
             for(let obs of gameState.obstacles) {
-                // Colisão AABB simples
                  if(b.position.x > obs.position.x - 10 && b.position.x < obs.position.x + 10 &&
                    b.position.z > obs.position.z - 10 && b.position.z < obs.position.z + 10 &&
                    b.position.y > 0 && b.position.y < 30) {
