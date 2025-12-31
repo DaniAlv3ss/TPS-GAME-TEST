@@ -11,6 +11,10 @@ const menuTitle = document.getElementById('menu-title');
 
 export function updateAmmoUI(current, max) {
     ammoCountEl.innerText = current;
+    // Atualiza o MAX também visualmente se necessário
+    const maxEl = document.getElementById('ammo-max');
+    if(maxEl) maxEl.innerText = "/ " + max;
+    
     ammoCountEl.style.color = current <= 5 ? '#ff4444' : '#fff';
 }
 
