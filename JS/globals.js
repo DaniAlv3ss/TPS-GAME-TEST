@@ -1,5 +1,19 @@
 import * as THREE from 'three';
 
+// Movemos os inputs para cá para evitar Dependência Circular
+export const inputs = {
+    moveForward: false,
+    moveBackward: false,
+    moveLeft: false,
+    moveRight: false,
+    canJump: false,
+    isLeftMouseDown: false,
+    isRightMouseDown: false,
+    isBPressed: false,
+    jumpPressed: false,
+    aimMode: 0 // 0: Normal, 1: TPS, 2: FPS
+};
+
 export const gameState = {
     scene: null,
     camera: null,
@@ -19,7 +33,7 @@ export const gameState = {
     bullets: [],
     enemies: [],
     obstacles: [],
-    particles: [], // Opcional se implementarmos particulas depois
+    particles: [],
     
     // Estado do Jogo
     score: 0,
