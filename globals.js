@@ -10,7 +10,8 @@ export const inputs = {
     isRightMouseDown: false,
     isBPressed: false,
     jumpPressed: false,
-    aimMode: 0 // 0: Normal, 1: TPS, 2: FPS
+    isSprinting: false, // Novo input
+    aimMode: 0 
 };
 
 export const gameState = {
@@ -37,7 +38,8 @@ export const gameState = {
     bullets: [],
     enemies: [],
     obstacles: [],
-    particles: [],
+    particles: [], // Fumaça e efeitos
+    healthPacks: [], // Itens de cura
     
     // Estado do Jogo
     score: 0,
@@ -51,8 +53,9 @@ export const CONSTANTS = {
     GRAVITY: 800.0,
     JUMP_HEIGHT: 250.0,
     RUN_SPEED: 400.0,
+    SPRINT_SPEED: 700.0, // Velocidade de corrida
     AIM_SPEED: 150.0,
-    MAX_AMMO: 30, // Padrão, mas sobrescrito pela arma
+    MAX_AMMO: 30, 
     FIRE_RATE: 100,
     BULLET_SPEED: 1500.0
 };
