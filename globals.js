@@ -1,5 +1,18 @@
 import * as THREE from 'three';
 
+export const inputs = {
+    moveForward: false,
+    moveBackward: false,
+    moveLeft: false,
+    moveRight: false,
+    canJump: false,
+    isLeftMouseDown: false,
+    isRightMouseDown: false,
+    isBPressed: false,
+    jumpPressed: false,
+    aimMode: 0 // 0: Normal, 1: TPS, 2: FPS
+};
+
 export const gameState = {
     scene: null,
     camera: null,
@@ -9,9 +22,14 @@ export const gameState = {
     playerContainer: null,
     playerGroup: null,
     aimPivot: null,
+    
+    // Arma Atual
+    currentWeaponIdx: 0,
     gunMesh: null,
     gunBarrelTip: null,
     cameraFPSPoint: null,
+    
+    // Body Parts (para esconder no FPS)
     torsoMesh: null,
     headMesh: null,
     
@@ -19,7 +37,7 @@ export const gameState = {
     bullets: [],
     enemies: [],
     obstacles: [],
-    particles: [], // Opcional se implementarmos particulas depois
+    particles: [],
     
     // Estado do Jogo
     score: 0,
@@ -33,8 +51,5 @@ export const CONSTANTS = {
     GRAVITY: 800.0,
     JUMP_HEIGHT: 250.0,
     RUN_SPEED: 400.0,
-    AIM_SPEED: 150.0,
-    MAX_AMMO: 30,
-    FIRE_RATE: 100,
-    BULLET_SPEED: 1500.0
+    AIM_SPEED: 150.0
 };
