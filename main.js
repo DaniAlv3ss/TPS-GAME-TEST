@@ -9,7 +9,6 @@ import { updateEnemies } from './enemy.js';
 let lastTime = performance.now();
 
 function init() {
-    // Configurar Three.js
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x0a0c10);
     scene.fog = new THREE.Fog(0x0a0c10, 50, 800);
@@ -28,7 +27,6 @@ function init() {
     document.getElementById('game-container').appendChild(renderer.domElement);
     gameState.renderer = renderer;
 
-    // Luzes
     const hemiLight = new THREE.HemisphereLight(0xffffff, 0x111111, 0.5);
     scene.add(hemiLight);
     const dirLight = new THREE.DirectionalLight(0xffffff, 0.9);
@@ -38,7 +36,6 @@ function init() {
     dirLight.shadow.mapSize.height = 4096;
     scene.add(dirLight);
 
-    // Inicialização dos Módulos
     createMap();
     createPlayer();
     setupInput();
@@ -49,7 +46,6 @@ function init() {
 
 function animate() {
     requestAnimationFrame(animate);
-
     const time = performance.now();
     const delta = Math.min((time - lastTime) / 1000, 0.1);
     lastTime = time;
@@ -60,7 +56,6 @@ function animate() {
         updateBullets(delta);
         updateEnemies(delta, time);
     }
-
     gameState.renderer.render(gameState.scene, gameState.camera);
 }
 
@@ -70,5 +65,4 @@ function onWindowResize() {
     gameState.renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
-// Iniciar
 init();
