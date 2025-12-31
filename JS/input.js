@@ -1,19 +1,5 @@
-import { gameState } from './globals.js';
+import { gameState, inputs } from './globals.js'; // Importa inputs daqui agora
 import { reload } from './weapon.js';
-
-export const inputs = {
-    moveForward: false,
-    moveBackward: false,
-    moveLeft: false,
-    moveRight: false,
-    canJump: false,
-    isLeftMouseDown: false,
-    isRightMouseDown: false,
-    isBPressed: false,
-    
-    // 0: Normal, 1: TPS Aim, 2: FPS Aim
-    aimMode: 0
-};
 
 let lastRightClickTime = 0;
 const blocker = document.getElementById('blocker');
@@ -41,8 +27,6 @@ export function setupInput() {
             case 'KeyD': inputs.moveRight = true; break;
             case 'Space': 
                 if(inputs.canJump) {
-                    // Nota: A lógica de pular manipula a velocidade no player.js
-                    // Aqui só setamos a flag que foi pressionado
                     inputs.jumpPressed = true; 
                 }
                 break;
@@ -67,7 +51,6 @@ export function setupInput() {
         } else if(e.button === 2) {
             inputs.isRightMouseDown = true;
             
-            // Lógica Toggle / Double Click
             const now = performance.now();
             const deltaClick = now - lastRightClickTime;
             lastRightClickTime = now;
@@ -96,12 +79,10 @@ export function setupInput() {
         if(inputs.aimMode === 1) sensitivity = 0.001;
         if(inputs.aimMode === 2) sensitivity = 0.0005;
 
-        // Rotação Y (Corpo)
         if(gameState.playerContainer) {
             gameState.playerContainer.rotation.y -= e.movementX * sensitivity;
         }
         
-        // Rotação X (Pivot da Arma/Câmera)
         if (gameState.aimPivot) {
             const currentRot = gameState.aimPivot.rotation.x;
             let nextRot = currentRot - (e.movementY * sensitivity);
@@ -109,8 +90,6 @@ export function setupInput() {
             
             gameState.aimPivot.rotation.x = nextRot;
             
-            // Se não estiver em FPS, a câmera segue a rotação do pivot manualmente aqui.
-            // Em FPS, ela segue via lerp no update do player.
             if (inputs.aimMode !== 2) {
                  gameState.camera.rotation.x = nextRot;
             }
