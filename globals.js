@@ -29,7 +29,7 @@ export const gameState = {
     gunBarrelTip: null,
     cameraFPSPoint: null,
     
-    // Body Parts (para esconder no FPS)
+    // Body Parts
     torsoMesh: null,
     headMesh: null,
     
@@ -51,5 +51,8 @@ export const CONSTANTS = {
     GRAVITY: 800.0,
     JUMP_HEIGHT: 250.0,
     RUN_SPEED: 400.0,
-    AIM_SPEED: 150.0
+    AIM_SPEED: 150.0,
+    MAX_AMMO: 30, // Padrão, mas sobrescrito pela arma
+    FIRE_RATE: 100,
+    BULLET_SPEED: 1500.0
 };
