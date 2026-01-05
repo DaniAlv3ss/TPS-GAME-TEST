@@ -10,14 +10,18 @@ export const inputs = {
     isRightMouseDown: false,
     isBPressed: false,
     jumpPressed: false,
-    isSprinting: false, // Novo input
-    aimMode: 0 
+    isSprinting: false,
+    aimMode: 0 // 0: Normal, 1: TPS, 2: FPS
 };
 
 export const gameState = {
     scene: null,
     camera: null,
     renderer: null,
+    
+    // Dual Render Scope (Battlefield Style)
+    scopeCamera: null,
+    scopeRenderTarget: null,
     
     // Player Refs
     playerContainer: null,
@@ -38,8 +42,8 @@ export const gameState = {
     bullets: [],
     enemies: [],
     obstacles: [],
-    particles: [], // Fumaça e efeitos
-    healthPacks: [], // Itens de cura
+    particles: [],
+    healthPacks: [],
     
     // Estado do Jogo
     score: 0,
@@ -53,7 +57,7 @@ export const CONSTANTS = {
     GRAVITY: 800.0,
     JUMP_HEIGHT: 250.0,
     RUN_SPEED: 400.0,
-    SPRINT_SPEED: 700.0, // Velocidade de corrida
+    SPRINT_SPEED: 700.0,
     AIM_SPEED: 150.0,
     MAX_AMMO: 30, 
     FIRE_RATE: 100,
