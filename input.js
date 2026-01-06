@@ -17,6 +17,9 @@ export function setupInput() {
             inputs.aimMode = 0;
             inputs.isLeftMouseDown = false;
             inputs.isSprinting = false;
+            // Foca no botão para acessibilidade quando o menu reaparece
+            const btn = document.getElementById('start-btn');
+            if(btn) btn.focus();
         }
     });
 
@@ -84,4 +87,8 @@ export function setupInput() {
     });
     
     document.addEventListener('contextmenu', e => e.preventDefault());
+
+    // Foco inicial
+    const btn = document.getElementById('start-btn');
+    if(btn) btn.focus();
 }

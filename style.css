@@ -168,3 +168,32 @@ h1 { margin: 0 0 30px 0; color: #fff; font-size: 42px; letter-spacing: 6px; text
 .control-row { display: flex; justify-content: space-between; margin: 12px 0; border-bottom: 1px solid #333; padding-bottom: 8px; min-width: 350px;}
 .key { color: #00aaff; font-weight: bold; font-family: monospace; font-size: 16px;}
 .label { color: #bbb; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;}
+.start-button {
+    display: block;
+    margin: 30px auto 0 auto;
+    background: transparent;
+    color: #00aaff;
+    font-family: 'Consolas', monospace;
+    font-size: 16px;
+    font-weight: bold;
+    letter-spacing: 2px;
+    padding: 12px 30px;
+    border: 2px solid #00aaff;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.2s ease;
+    outline: none;
+    box-shadow: 0 0 10px rgba(0, 170, 255, 0.2);
+}
+
+.start-button:hover {
+    background: rgba(0, 170, 255, 0.1);
+    box-shadow: 0 0 20px rgba(0, 170, 255, 0.4);
+    transform: translateY(-1px);
+}
+
+.start-button:focus-visible {
+    background: #00aaff;
+    color: #000;
+    box-shadow: 0 0 30px rgba(0, 170, 255, 0.6);
+}
