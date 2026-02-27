@@ -10,7 +10,6 @@ const direction = new THREE.Vector3();
 // Ajuste para câmera mais alta (estilo tático)
 const normalOffset = new THREE.Vector3(20, 50, 75); 
 const aimOffset = new THREE.Vector3(15, 35, 40); 
-const currentCameraTarget = new THREE.Vector3();
 
 export function createPlayer() {
     const playerContainer = new THREE.Group();

@@ -50,7 +50,7 @@ export function setupInput() {
 
     document.addEventListener('mousedown', (e) => {
         if(!gameState.controlsEnabled) return;
-        if(e.button === 0) inputs.isLeftMouseDown = true;
+        if(e.button === 0) { inputs.isLeftMouseDown = true; inputs.isNewClick = true; }
         if(e.button === 2) {
             const now = performance.now();
             // Clique duplo rápido para FPS, clique simples para Ombro

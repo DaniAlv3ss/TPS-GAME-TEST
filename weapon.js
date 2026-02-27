@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { gameState, inputs, CONSTANTS } from './globals.js';
+import { gameState, inputs } from './globals.js';
 import * as UI from './ui.js';
 
 // Configurações Simplificadas (O offset Y é calculado automaticamente agora)
@@ -140,7 +140,7 @@ function buildSight(parent, type, yPos) {
     if(type === "holo") {
         centerY = 1.5;
         s.add(new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.4, 5), metal));
-        const frame = new THREE.Mesh(new THREE.BoxGeometry(2.6, 2.5, 4), metal); frame.position.y = 1.5; 
+        const frame = new THREE.Mesh(new THREE.BoxGeometry(2.6, 2.5, 4), metal); frame.position.y = 1.5; s.add(frame);
         // Lente
         const lens = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), createLensMaterial("circle")); 
         lens.position.set(0, 1.5, -0.5); s.add(lens);
@@ -167,9 +167,6 @@ function buildSight(parent, type, yPos) {
         }
         
         const lens = new THREE.Mesh(new THREE.CircleGeometry(1.3, 16), lensMat);
-        lens.position.set(0, centerY, -5.9); // Fica na ponta da frente da luneta
-        // Inverter UV para não ficar espelhado se necessário, ou rodar mesh
-        lens.rotation.y = Math.PI; // Virada pro jogador? Não, jogador olha pro -Z.
         // A lente tem que estar virada pra trás (para o jogador ver). O tubo aponta pra -Z.
         // A face do CircleGeometry aponta pra +Z. Então jogador vê.
         lens.position.set(0, centerY, 5.9); // Ponta de TRÁS (perto do olho)

@@ -15,14 +15,15 @@ export function updateEnemies(delta, time) {
 
     const playerPos = gameState.playerContainer.position;
 
-    for(let e of gameState.enemies) {
+    for(let i = gameState.enemies.length - 1; i >= 0; i--) {
+        const e = gameState.enemies[i];
         let dir = new THREE.Vector3().subVectors(playerPos, e.position).normalize();
         e.position.add(dir.multiplyScalar(ENEMY_SPEED * delta));
         e.lookAt(playerPos);
         
         // Dano no Player
         if(e.position.distanceTo(playerPos) < 15) {
-            gameState.health -= 0.5;
+            gameState.health -= 30 * delta;
             UI.updateHealthUI();
             if(gameState.health <= 0) {
                 gameState.isGameOver = true;
