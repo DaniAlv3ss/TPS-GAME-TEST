@@ -10,7 +10,8 @@
     <script type="importmap">
         {
             "imports": {
-                "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.module.js"
+                "three": "https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/"
             }
         }
     </script>
@@ -33,6 +34,7 @@
             <div class="hair left"></div>
             <div class="hair right"></div>
         </div>
+        <div id="hit-marker"><span></span><span></span><span></span><span></span></div>
 
         <div id="health-container">
             <div id="hp-label">INTEGRIDADE</div>
@@ -47,8 +49,20 @@
                 <span id="ammo-max">/ 30</span>
             </div>
             <div id="weapon-name" style="font-size: 12px; color: #888; letter-spacing: 3px; margin-top:5px; font-weight: 800;">MK-17 SCAR-H</div>
+            <div id="weapon-attachments">MIRA: HOLO • BOCA: COMPENSADOR • ACESSÓRIO: LASER</div>
             <div id="reload-msg">RECARREGAR [R]</div>
         </div>
+
+        <div id="boss-hud" class="hidden">
+            <div id="boss-name">WARLORD TITAN</div>
+            <div id="boss-phase">FASE 1</div>
+            <div id="boss-health-bg"><div id="boss-health-fill"></div></div>
+        </div>
+
+        <div id="damage-overlay"></div>
+        <div id="cinematic-vignette"></div>
+        <div id="storm-alert">⚠ TEMPESTADE EXTREMA • BOSS DETECTADO</div>
+        <div id="boss-threat">⚠ ALVO PRIORITÁRIO: WARLORD TITAN</div>
     </div>
 
     <div id="blocker">
@@ -59,6 +73,8 @@
             <div class="control-row"><span class="label">Mira Reflex (FPS)</span> <span class="key">2 CLIQUES DIREITOS</span></div>
             <div class="control-row"><span class="label">Disparar</span> <span class="key">ESQUERDO</span></div>
             <div class="control-row"><span class="label">Recarregar</span> <span class="key">R</span></div>
+            <div class="control-row"><span class="label">Arsenal 1-10</span> <span class="key">TECLAS 1-0</span></div>
+            <div class="control-row"><span class="label">Arsenal 11-20</span> <span class="key">Q/E OU SCROLL</span></div>
             <div class="control-row"><span class="label">Saltar</span> <span class="key">ESPAÇO</span></div>
             <p style="text-align: center; color: #666; margin-top: 30px; font-size: 12px; letter-spacing: 2px;">CLIQUE PARA INICIAR MISSÃO</p>
         </div>

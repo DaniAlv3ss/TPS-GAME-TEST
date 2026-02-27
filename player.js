@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { gameState, CONSTANTS, inputs } from './globals.js';
 import * as UI from './ui.js';
 import { initWeaponSystem } from './weapon.js';
+import { playPickupSound, triggerFootstep } from './audio.js';
 
 const limbs = { leftLeg: null, rightLeg: null, leftArm: null, rightArm: null };
 const velocity = new THREE.Vector3();
@@ -88,20 +89,27 @@ export function updatePlayer(delta, time) {
         if(pack.position.distanceTo(gameState.playerContainer.position) < 15) {
             gameState.health = Math.min(100, gameState.health + 50);
             UI.updateHealthUI();
+            playPickupSound();
             gameState.scene.remove(pack);
             gameState.healthPacks.splice(i, 1);
         }
     }
 
     const isMoving = inputs.moveForward || inputs.moveBackward || inputs.moveLeft || inputs.moveRight;
+    const speedNorm = Math.min(1, Math.abs(velocity.x) / CONSTANTS.SPRINT_SPEED + Math.abs(velocity.z) / CONSTANTS.SPRINT_SPEED);
+
     if(isMoving) {
         const t = time * 0.012 * (speed/400);
         limbs.leftLeg.rotation.x = Math.sin(t) * 0.7;
         limbs.rightLeg.rotation.x = Math.sin(t + Math.PI) * 0.7;
+        triggerFootstep(speedNorm);
     } else {
         limbs.leftLeg.rotation.x = 0;
         limbs.rightLeg.rotation.x = 0;
     }
+
+    const baseSpread = inputs.aimMode === 0 ? 14 : (inputs.aimMode === 1 ? 7 : 0);
+    UI.setCrosshairGap(Math.max(0, baseSpread + speedNorm * 8));
 
     updateCamera();
 }
@@ -137,6 +145,20 @@ function updateCamera() {
         
         const target = inputs.aimMode === 1 ? aimOffset : normalOffset;
         gameState.camera.position.lerp(target, 0.15);
-        gameState.camera.rotation.set(gameState.aimPivot.rotation.x, 0, 0);
+        const bob = Math.sin(performance.now() * 0.012) * 0.3 * (inputs.isSprinting ? 1.2 : 0.6) * (inputs.moveForward || inputs.moveBackward || inputs.moveLeft || inputs.moveRight ? 1 : 0);
+        gameState.camera.rotation.set(gameState.aimPivot.rotation.x + bob * 0.004, 0, 0);
+        gameState.camera.position.y += bob;
+
+        const sideMove = (Number(inputs.moveRight) - Number(inputs.moveLeft));
+        gameState.camera.rotation.z = THREE.MathUtils.lerp(gameState.camera.rotation.z, -sideMove * 0.03, 0.1);
+    }
+
+    if (gameState.gunMesh) {
+        const swayX = Math.sin(performance.now() * 0.005) * 0.04;
+        const swayY = Math.cos(performance.now() * 0.004) * 0.03;
+        const baseX = gameState.gunMesh.userData.baseRotX || 0;
+        const baseY = gameState.gunMesh.userData.baseRotY || 0;
+        gameState.gunMesh.rotation.y = THREE.MathUtils.lerp(gameState.gunMesh.rotation.y, baseY + swayX, 0.06);
+        gameState.gunMesh.rotation.x = THREE.MathUtils.lerp(gameState.gunMesh.rotation.x, baseX + swayY, 0.06);
     }
 }

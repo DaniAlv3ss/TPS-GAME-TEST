@@ -1,5 +1,6 @@
 import { gameState, inputs } from './globals.js';
-import { reload, switchWeapon } from './weapon.js';
+import { cycleWeapon, getWeaponCount, reload, switchWeapon } from './weapon.js';
+import { resumeAudio } from './audio.js';
 
 let lastRightClickTime = 0;
 const blocker = document.getElementById('blocker');
@@ -7,6 +8,7 @@ const blocker = document.getElementById('blocker');
 export function setupInput() {
     blocker.addEventListener('click', () => {
         if(gameState.isGameOver) location.reload();
+        resumeAudio();
         document.body.requestPointerLock();
     });
 
@@ -35,6 +37,8 @@ export function setupInput() {
             case 'Space': if(inputs.canJump) inputs.jumpPressed = true; break;
             case 'KeyR': reload(); break;
             case 'ShiftLeft': inputs.isSprinting = true; break; // Correr
+            case 'KeyQ': cycleWeapon(-1); break;
+            case 'KeyE': cycleWeapon(1); break;
         }
     });
 
@@ -50,6 +54,7 @@ export function setupInput() {
 
     document.addEventListener('mousedown', (e) => {
         if(!gameState.controlsEnabled) return;
+        resumeAudio();
         if(e.button === 0) { inputs.isLeftMouseDown = true; inputs.isNewClick = true; }
         if(e.button === 2) {
             const now = performance.now();
@@ -82,6 +87,12 @@ export function setupInput() {
             if (inputs.aimMode !== 2) gameState.camera.rotation.x = nextRot;
         }
     });
+
+    document.addEventListener('wheel', (e) => {
+        if(!gameState.controlsEnabled) return;
+        if (getWeaponCount() <= 10) return;
+        cycleWeapon(e.deltaY > 0 ? 1 : -1);
+    }, { passive: true });
     
     document.addEventListener('contextmenu', e => e.preventDefault());
 }

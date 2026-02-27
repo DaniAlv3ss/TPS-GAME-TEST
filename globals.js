@@ -19,6 +19,7 @@ export const gameState = {
     scene: null,
     camera: null,
     renderer: null,
+    composer: null,
     
     // Dual Render Scope (Battlefield Style)
     scopeCamera: null,
@@ -44,6 +45,8 @@ export const gameState = {
     enemies: [],
     obstacles: [],
     particles: [],
+    decals: [],
+    explosions: [],
     healthPacks: [],
     
     // Estado do Jogo
@@ -51,7 +54,38 @@ export const gameState = {
     health: 100,
     wave: 1,
     isGameOver: false,
-    controlsEnabled: false
+    controlsEnabled: false,
+
+    // Visual State
+    hitFlash: 0,
+    ambientPulse: 0,
+    rainSystem: null,
+    rainVelocities: null,
+    weatherLevel: 0,
+    lightningFlash: 0,
+    lastBossWave: 0,
+    currentBoss: null,
+    stormEvent: {
+        active: false,
+        intensity: 0,
+        timer: 0,
+        duration: 20
+    },
+    cinematic: {
+        active: false,
+        timer: 0,
+        duration: 2.2,
+        freezeDuration: 0.16,
+        shakeIntensity: 0,
+        shakeTimer: 0
+    },
+
+    // Audio State
+    audioCtx: null,
+    audioMaster: null,
+    audioReady: false,
+    musicNodes: null,
+    musicIntensity: 0
 };
 
 export const CONSTANTS = {

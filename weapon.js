@@ -1,22 +1,37 @@
 import * as THREE from 'three';
 import { gameState, inputs } from './globals.js';
 import * as UI from './ui.js';
+import { playEnemyDownSound, playHitSound, playReloadSound, playShotSound } from './audio.js';
+import { createExplosion } from './effects.js';
+import { onEnemyKilled } from './enemy.js';
 
 // Configurações Simplificadas (O offset Y é calculado automaticamente agora)
 const WEAPON_DB = [
-    { name: "MK-17 SCAR-H", type: "auto", damage: 1.2, fireRate: 110, ammo: 20, reloadTime: 1800, speed: 1600, spread: 0.02, recoil: 0.004, color: 0xc2b280, builder: "scar", sight: "holo", camZ: -1.0 },
-    { name: "MP5 A3", type: "auto", damage: 0.7, fireRate: 65, ammo: 30, reloadTime: 1200, speed: 1100, spread: 0.05, recoil: 0.002, color: 0x1a1a1a, builder: "mp5", sight: "red_dot", camZ: -0.5 },
-    { name: "M4A1 SOPMOD", type: "auto", damage: 1.0, fireRate: 80, ammo: 30, reloadTime: 1500, speed: 1500, spread: 0.025, recoil: 0.003, color: 0x222222, builder: "ar15", sight: "acog", camZ: -1.5 }, // ACOG precisa ficar mais longe
-    { name: "AK-47 CLASSIC", type: "auto", damage: 1.6, fireRate: 120, ammo: 30, reloadTime: 2000, speed: 1400, spread: 0.06, recoil: 0.007, color: 0x222222, woodColor: 0x8b4513, builder: "ak47", sight: "iron_ak", camZ: 1.5 },
-    { name: "AWP MAGNUM", type: "semi", damage: 15.0, fireRate: 1500, ammo: 5, reloadTime: 3000, speed: 3000, spread: 0.0, recoil: 0.08, color: 0x3d4c3d, builder: "awp", sight: "scope_sniper", camZ: -1.8 }, // Scope: Perto da lente
-    { name: "M870 BREACHER", type: "shotgun", damage: 1.2, fireRate: 900, ammo: 7, reloadTime: 3500, speed: 800, spread: 0.12, recoil: 0.05, color: 0x333333, builder: "shotgun", sight: "iron_shotgun", camZ: 1.0 },
-    { name: "GLOCK 18C", type: "auto", damage: 0.5, fireRate: 50, ammo: 19, reloadTime: 900, speed: 1000, spread: 0.08, recoil: 0.005, color: 0x444444, builder: "pistol", sight: "iron_pistol", camZ: 2.0 },
-    { name: "M249 PARA", type: "auto", damage: 1.1, fireRate: 90, ammo: 100, reloadTime: 4500, speed: 1400, spread: 0.07, recoil: 0.005, color: 0x333333, builder: "lmg", sight: "holo", camZ: -1.0 },
-    { name: "VECTOR .45", type: "auto", damage: 0.6, fireRate: 35, ammo: 30, reloadTime: 1000, speed: 1200, spread: 0.03, recoil: 0.001, color: 0xeeeeee, builder: "vector", sight: "red_dot", camZ: -1.0 },
-    { name: "RAILGUN MK-II", type: "semi", damage: 25.0, fireRate: 1200, ammo: 3, reloadTime: 2500, speed: 5000, spread: 0.0, recoil: 0.03, color: 0x001133, builder: "railgun", sight: "scope_digital", camZ: -1.8 }
+    { name: "MK-17 SCAR-H", type: "auto", damage: 1.2, fireRate: 110, ammo: 20, reloadTime: 1800, speed: 1600, spread: 0.02, recoil: 0.004, color: 0xc2b280, builder: "scar", sight: "holo", camZ: -1.0, attachments: { sight: 'HOLO', muzzle: 'COMPENSADOR', underbarrel: 'GRIP ANGULAR', mag: '20RD PMAG', stock: 'SCAR UGG' } },
+    { name: "M4A1 SOPMOD", type: "auto", damage: 1.0, fireRate: 78, ammo: 30, reloadTime: 1500, speed: 1500, spread: 0.024, recoil: 0.003, color: 0x222222, builder: "ar15", sight: "acog", camZ: -1.5, attachments: { sight: 'ACOG 4X', muzzle: 'FREIO', underbarrel: 'BIPOD', mag: '30RD STANAG', stock: 'CTR' } },
+    { name: "HK416 D10RS", type: "auto", damage: 1.05, fireRate: 76, ammo: 30, reloadTime: 1500, speed: 1520, spread: 0.023, recoil: 0.0033, color: 0x30353b, builder: "ar15", sight: "holo", camZ: -1.25, attachments: { sight: 'EOTECH', muzzle: 'SUPRESSOR', underbarrel: 'GRIP VERTICAL', mag: '30RD PMAG', stock: 'B5 SOPMOD' } },
+    { name: "AK-47 CLASSIC", type: "auto", damage: 1.55, fireRate: 118, ammo: 30, reloadTime: 2000, speed: 1400, spread: 0.058, recoil: 0.007, color: 0x222222, woodColor: 0x8b4513, builder: "ak47", sight: "iron_ak", camZ: 1.5, attachments: { sight: 'IRON', muzzle: 'SEM', underbarrel: 'GRIP LEVE', mag: '30RD STEEL', stock: 'MADEIRA' } },
+    { name: "AK-12 MODERN", type: "auto", damage: 1.35, fireRate: 98, ammo: 30, reloadTime: 1850, speed: 1450, spread: 0.042, recoil: 0.0058, color: 0x2a2e34, builder: "ak47", sight: "red_dot", camZ: 0.6, attachments: { sight: 'KOBRA', muzzle: 'COMPENSADOR', underbarrel: 'GRIP ANGULAR', mag: '30RD POLYMER', stock: 'TELESCÓPICA' } },
+    { name: "G36C KSK", type: "auto", damage: 1.1, fireRate: 84, ammo: 30, reloadTime: 1550, speed: 1480, spread: 0.028, recoil: 0.0038, color: 0x242628, builder: "ar15", sight: "red_dot", camZ: -1.0, attachments: { sight: 'RED DOT', muzzle: 'FLASH HIDER', underbarrel: 'GRIP CURTO', mag: '30RD TRANSLUCENT', stock: 'FOLDING' } },
+    { name: "FN FAL 50.00", type: "semi", damage: 2.4, fireRate: 280, ammo: 20, reloadTime: 2100, speed: 1760, spread: 0.016, recoil: 0.009, color: 0x2d2f31, builder: "scar", sight: "acog", camZ: -1.3, attachments: { sight: 'SUSAT 4X', muzzle: 'FREIO', underbarrel: 'BIPOD', mag: '20RD 7.62', stock: 'FIXA' } },
+    { name: "M14 EBR", type: "semi", damage: 2.7, fireRate: 320, ammo: 20, reloadTime: 2200, speed: 1850, spread: 0.014, recoil: 0.0105, color: 0x3b3f42, builder: "scar", sight: "scope_sniper", camZ: -1.7, attachments: { sight: '6X DMR', muzzle: 'SUPRESSOR LONGO', underbarrel: 'BIPOD', mag: '20RD SR-25', stock: 'CHASSIS EBR' } },
+    { name: "MP5 A3", type: "auto", damage: 0.72, fireRate: 65, ammo: 30, reloadTime: 1200, speed: 1100, spread: 0.05, recoil: 0.002, color: 0x1a1a1a, builder: "mp5", sight: "red_dot", camZ: -0.5, attachments: { sight: 'RED DOT', muzzle: 'SUPRESSOR', underbarrel: 'LASER', mag: '30RD CURVO', stock: 'A3 RETRÁTIL' } },
+    { name: "MP7A2", type: "auto", damage: 0.68, fireRate: 42, ammo: 40, reloadTime: 1120, speed: 1320, spread: 0.032, recoil: 0.0018, color: 0x272d34, builder: "mp5", sight: "holo", camZ: -0.9, attachments: { sight: 'HOLO MINI', muzzle: 'SUPRESSOR', underbarrel: 'GRIP', mag: '40RD', stock: 'COLAPSÁVEL' } },
+    { name: "UMP45", type: "auto", damage: 0.95, fireRate: 82, ammo: 25, reloadTime: 1450, speed: 1180, spread: 0.041, recoil: 0.0031, color: 0x2b2f33, builder: "mp5", sight: "red_dot", camZ: -0.8, attachments: { sight: 'RED DOT', muzzle: 'COMP', underbarrel: 'GRIP CURTO', mag: '25RD .45', stock: 'FIXA' } },
+    { name: "VECTOR .45", type: "auto", damage: 0.62, fireRate: 35, ammo: 30, reloadTime: 1000, speed: 1200, spread: 0.03, recoil: 0.001, color: 0xeeeeee, builder: "vector", sight: "red_dot", camZ: -1.0, attachments: { sight: 'RED DOT', muzzle: 'COMP', underbarrel: 'GRIP CURTO', mag: '30RD EXT', stock: 'FOLDING' } },
+    { name: "P90 TR", type: "auto", damage: 0.58, fireRate: 38, ammo: 50, reloadTime: 1700, speed: 1260, spread: 0.034, recoil: 0.0014, color: 0x303338, builder: "mp5", sight: "red_dot", camZ: -0.7, attachments: { sight: 'REFLEX', muzzle: 'SUPRESSOR', underbarrel: 'SEM', mag: '50RD TOP', stock: 'INTEGRADA' } },
+    { name: "M249 PARA", type: "auto", damage: 1.1, fireRate: 90, ammo: 100, reloadTime: 4500, speed: 1400, spread: 0.07, recoil: 0.005, color: 0x333333, builder: "lmg", sight: "holo", camZ: -1.0, attachments: { sight: 'HOLO', muzzle: 'FREIO PESADO', underbarrel: 'BIPOD', mag: 'CAIXA 100RD', stock: 'PARA' } },
+    { name: "PKP PECHENEG", type: "auto", damage: 1.45, fireRate: 98, ammo: 100, reloadTime: 4800, speed: 1500, spread: 0.074, recoil: 0.0062, color: 0x2b2b2b, builder: "lmg", sight: "acog", camZ: -1.2, attachments: { sight: 'PSO 4X', muzzle: 'FREIO LONGO', underbarrel: 'BIPOD', mag: 'CAIXA 100RD', stock: 'FIXA' } },
+    { name: "M870 BREACHER", type: "shotgun", damage: 1.25, fireRate: 900, ammo: 7, reloadTime: 3500, speed: 800, spread: 0.12, recoil: 0.05, color: 0x333333, builder: "shotgun", sight: "iron_shotgun", camZ: 1.0, attachments: { sight: 'IRON', muzzle: 'CHOKE', underbarrel: 'SEM', mag: 'TUBULAR 7', stock: 'POLÍMERO' } },
+    { name: "SPAS-12", type: "shotgun", damage: 1.42, fireRate: 820, ammo: 8, reloadTime: 3600, speed: 850, spread: 0.108, recoil: 0.058, color: 0x2d3134, builder: "shotgun", sight: "iron_shotgun", camZ: 0.9, attachments: { sight: 'RIB', muzzle: 'CHOKE TÁTICO', underbarrel: 'SEM', mag: 'TUBULAR 8', stock: 'FOLDING' } },
+    { name: "GLOCK 18C", type: "auto", damage: 0.5, fireRate: 50, ammo: 19, reloadTime: 900, speed: 1000, spread: 0.08, recoil: 0.005, color: 0x444444, builder: "pistol", sight: "iron_pistol", camZ: 2.0, attachments: { sight: 'IRON', muzzle: 'COMPENSADOR MINI', underbarrel: 'LANTERNA', mag: '19RD', stock: 'N/A' } },
+    { name: "SIG P320", type: "semi", damage: 0.86, fireRate: 190, ammo: 17, reloadTime: 940, speed: 1080, spread: 0.044, recoil: 0.0048, color: 0x3a3d41, builder: "pistol", sight: "red_dot", camZ: 1.8, attachments: { sight: 'RMR', muzzle: 'THREADED', underbarrel: 'LANTERNA', mag: '17RD', stock: 'N/A' } },
+    { name: "AWP MAGNUM", type: "semi", damage: 15.0, fireRate: 1500, ammo: 5, reloadTime: 3000, speed: 3000, spread: 0.0, recoil: 0.08, color: 0x3d4c3d, builder: "awp", sight: "scope_sniper", camZ: -1.8, attachments: { sight: '8X SNIPER', muzzle: 'SUPRESSOR LONGO', underbarrel: 'BIPOD', mag: '5RD', stock: 'PRECISION' } },
+    { name: "RAILGUN MK-II", type: "semi", damage: 25.0, fireRate: 1200, ammo: 3, reloadTime: 2500, speed: 5000, spread: 0.0, recoil: 0.03, color: 0x001133, builder: "railgun", sight: "scope_digital", camZ: -1.8, attachments: { sight: 'DIGITAL', muzzle: 'PLASMA', underbarrel: 'ESTABILIZADOR', mag: '3 CÉLULAS', stock: 'ELETROMAGNÉTICA' } }
 ];
 
 let currentWeapon = WEAPON_DB[0];
+let activeStats = WEAPON_DB[0];
 let currentAmmo = currentWeapon.ammo;
 let isReloading = false;
 let lastShotTime = 0;
@@ -35,6 +50,15 @@ export function initWeaponSystem() {
     switchWeapon(0);
 }
 
+export function getWeaponCount() {
+    return WEAPON_DB.length;
+}
+
+export function cycleWeapon(direction = 1) {
+    const next = (gameState.currentWeaponIdx + direction + WEAPON_DB.length) % WEAPON_DB.length;
+    switchWeapon(next);
+}
+
 export function switchWeapon(index) {
     if (index < 0 || index >= WEAPON_DB.length) return;
     
@@ -45,10 +69,12 @@ export function switchWeapon(index) {
     
     gameState.currentWeaponIdx = index;
     currentWeapon = WEAPON_DB[index];
+    activeStats = applyAttachmentModifiers(currentWeapon);
     currentAmmo = currentWeapon.ammo;
     isReloading = false;
     
     UI.updateWeaponInfo(currentWeapon.name, currentAmmo, currentWeapon.ammo);
+    UI.updateAttachmentsUI(formatAttachmentText(currentWeapon.attachments));
     
     if (gameState.aimPivot) {
         createWeapon(gameState.aimPivot);
@@ -58,6 +84,8 @@ export function switchWeapon(index) {
 export function createWeapon(parentGroup) {
     const gunMesh = new THREE.Group();
     gunMesh.position.set(8, 14, -8); 
+    gunMesh.userData.baseRotX = gunMesh.rotation.x;
+    gunMesh.userData.baseRotY = gunMesh.rotation.y;
     parentGroup.add(gunMesh);
     gameState.gunMesh = gunMesh;
 
@@ -223,6 +251,7 @@ function createLensMaterial(style) {
 export function reload() {
     if (isReloading || currentAmmo === currentWeapon.ammo) return;
     isReloading = true; UI.showReloadMsg(true);
+    playReloadSound();
     gameState.gunMesh.rotation.x += 0.8; 
     setTimeout(() => {
         currentAmmo = currentWeapon.ammo; UI.updateAmmoUI(currentAmmo, currentWeapon.ammo);
@@ -241,6 +270,8 @@ function shoot(time) {
     if (currentAmmo <= 0) { UI.showNoAmmoMsg(); return; }
     if (isReloading) return;
     lastShotTime = time; currentAmmo--; UI.updateAmmoUI(currentAmmo, currentWeapon.ammo);
+    playShotSound(activeStats);
+    UI.pulseCrosshair();
 
     const flash = new THREE.PointLight(0xffffaa, 3, 20);
     gameState.gunBarrelTip.getWorldPosition(flash.position);
@@ -251,7 +282,7 @@ function shoot(time) {
     const pc = currentWeapon.type === "shotgun" ? 8 : 1;
     for(let i=0; i<pc; i++) createBullet();
 
-    if(inputs.aimMode !== 2) gameState.camera.rotation.x += currentWeapon.recoil;
+    if(inputs.aimMode !== 2) gameState.camera.rotation.x += activeStats.recoil;
     gameState.gunMesh.position.z += 0.5;
     setTimeout(() => gameState.gunMesh.position.z -= 0.5, 50);
 }
@@ -281,11 +312,11 @@ function createBullet() {
     if(!found) raycaster.ray.at(1000, target);
 
     let dir = new THREE.Vector3().subVectors(target, startPos).normalize();
-    let spread = currentWeapon.spread; if(inputs.aimMode !== 0) spread *= 0.2;
-    if(currentWeapon.type === "shotgun") spread = currentWeapon.spread;
+    let spread = activeStats.spread; if(inputs.aimMode !== 0) spread *= 0.2;
+    if(currentWeapon.type === "shotgun") spread = activeStats.spread;
     dir.x += (Math.random()-0.5)*spread; dir.y += (Math.random()-0.5)*spread; dir.z += (Math.random()-0.5)*spread; dir.normalize();
 
-    bullet.userData = { velocity: dir.multiplyScalar(currentWeapon.speed), life: 100, damage: currentWeapon.damage };
+    bullet.userData = { velocity: dir.multiplyScalar(activeStats.speed), life: 100, damage: activeStats.damage };
     gameState.bullets.push(bullet); gameState.scene.add(bullet);
 }
 
@@ -294,24 +325,182 @@ export function updateBullets(delta) {
         const p = gameState.particles[i]; p.position.add(p.userData.vel.clone().multiplyScalar(delta));
         p.material.opacity -= delta*3; if(p.material.opacity<=0) { gameState.scene.remove(p); gameState.particles.splice(i,1); }
     }
+
+    for (let i = gameState.decals.length - 1; i >= 0; i--) {
+        const decal = gameState.decals[i];
+        decal.userData.life -= delta;
+        decal.material.opacity = Math.max(0, decal.userData.life / decal.userData.maxLife);
+        if (decal.userData.life <= 0) {
+            gameState.scene.remove(decal);
+            gameState.decals.splice(i, 1);
+        }
+    }
+
     for (let i = gameState.bullets.length - 1; i >= 0; i--) {
         const b = gameState.bullets[i];
         b.position.add(b.userData.velocity.clone().multiplyScalar(delta));
         let hit = false;
         for(let j = gameState.enemies.length - 1; j >= 0; j--) {
-            if(b.position.distanceTo(gameState.enemies[j].position) < 14) {
-                const e = gameState.enemies[j]; e.userData.health -= b.userData.damage;
+            if(b.position.distanceTo(gameState.enemies[j].position) < (gameState.enemies[j].userData?.isBoss ? 18 : 14)) {
+                const e = gameState.enemies[j];
+                const finalDamage = calculateDamageAgainstEnemy(e, b.position, b.userData.damage);
+                e.userData.health -= finalDamage;
                 e.position.add(b.userData.velocity.clone().normalize().multiplyScalar(2));
-                if(e.userData.health <= 0) { gameState.scene.remove(e); gameState.enemies.splice(j, 1); gameState.score += 50; UI.updateScoreUI(); }
+                playHitSound();
+                UI.flashHitMarker();
+                createImpactSparks(b.position, 0xff6644, 4);
+                if (e.userData?.isBoss) {
+                    UI.updateBossHud({
+                        name: e.userData.name,
+                        health: e.userData.health,
+                        maxHealth: e.userData.maxHealth,
+                        phase: e.userData.phase || 1,
+                        weakspot: e.userData.weakspotHint,
+                        lastHit: e.userData.lastWeakspotHit
+                    });
+                }
+                if(e.userData.health <= 0) {
+                    gameState.scene.remove(e);
+                    gameState.enemies.splice(j, 1);
+                    if (!e.userData?.isBoss) gameState.score += 50;
+                    onEnemyKilled(e);
+                    playEnemyDownSound();
+                    UI.updateScoreUI();
+                }
                 hit = true; break;
             }
         }
-        if(!hit && b.position.y < 0) hit = true;
+        if(!hit && b.position.y < 0) {
+            hit = true;
+            const point = new THREE.Vector3(b.position.x, 0.05, b.position.z);
+            createSurfaceImpact(point, new THREE.Vector3(0, 1, 0), 0x1c2128);
+            if (currentWeapon.builder === 'railgun') {
+                createExplosion(point.clone(), { radius: 54, life: 0.55, damage: 2.5, color: 0x66ccff });
+            }
+        }
         if(!hit) {
             for(let obs of gameState.obstacles) {
-                 if(b.position.x > obs.position.x-10 && b.position.x < obs.position.x+10 && b.position.z > obs.position.z-10 && b.position.z < obs.position.z+10 && b.position.y < 30) { hit = true; break; }
+                 if(b.position.x > obs.position.x-10 && b.position.x < obs.position.x+10 && b.position.z > obs.position.z-10 && b.position.z < obs.position.z+10 && b.position.y < 30) {
+                    hit = true;
+                    const normal = new THREE.Vector3().subVectors(b.position, obs.position).normalize();
+                    createSurfaceImpact(b.position.clone(), normal, 0x2c3138);
+                    if (currentWeapon.builder === 'railgun') {
+                        createExplosion(b.position.clone(), { radius: 52, life: 0.5, damage: 2.2, color: 0x66ccff });
+                    }
+                    break;
+                }
             }
         }
         if(hit || b.userData.life-- <= 0) { gameState.scene.remove(b); gameState.bullets.splice(i,1); }
     }
+}
+
+function createSurfaceImpact(position, normal, color) {
+    createImpactSparks(position, 0xffd8aa, 5);
+
+    const decal = new THREE.Mesh(
+        new THREE.CircleGeometry(1 + Math.random() * 1.6, 12),
+        new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.55, side: THREE.DoubleSide })
+    );
+    decal.position.copy(position);
+    decal.position.add(normal.clone().multiplyScalar(0.06));
+    decal.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), normal.clone().normalize());
+    decal.rotation.z = Math.random() * Math.PI * 2;
+    decal.userData = { life: 9 + Math.random() * 5, maxLife: 14 };
+    gameState.decals.push(decal);
+    gameState.scene.add(decal);
+
+    if (gameState.decals.length > 120) {
+        const old = gameState.decals.shift();
+        gameState.scene.remove(old);
+    }
+}
+
+function createImpactSparks(position, color, count) {
+    for (let i = 0; i < count; i++) {
+        const spark = new THREE.Mesh(
+            new THREE.BoxGeometry(0.15, 0.15, 0.15),
+            new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.95 })
+        );
+        spark.position.copy(position);
+        spark.userData = {
+            vel: new THREE.Vector3((Math.random() - 0.5) * 8, Math.random() * 5, (Math.random() - 0.5) * 8),
+            life: 12
+        };
+        gameState.particles.push(spark);
+        gameState.scene.add(spark);
+    }
+}
+
+function applyAttachmentModifiers(weapon) {
+    const modified = { ...weapon };
+    if (!weapon.attachments) return modified;
+    const sight = (weapon.attachments.sight || '').toLowerCase();
+    const muzzle = (weapon.attachments.muzzle || '').toLowerCase();
+    const underbarrel = (weapon.attachments.underbarrel || '').toLowerCase();
+    const mag = (weapon.attachments.mag || '').toLowerCase();
+    const stock = (weapon.attachments.stock || '').toLowerCase();
+
+    if (muzzle.includes('comp') || muzzle.includes('freio')) {
+        modified.recoil *= 0.88;
+    }
+    if (muzzle.includes('supp')) {
+        modified.speed *= 0.95;
+        modified.spread *= 0.9;
+    }
+    if (underbarrel.includes('grip')) {
+        modified.spread *= 0.85;
+        modified.recoil *= 0.9;
+    }
+    if (underbarrel.includes('bipod')) {
+        modified.spread *= 0.8;
+    }
+    if (sight.includes('4x') || sight.includes('6x') || sight.includes('8x') || sight.includes('sniper')) {
+        modified.spread *= 0.78;
+    }
+    if (mag.includes('ext') || mag.includes('100rd') || mag.includes('caixa')) {
+        modified.reloadTime *= 1.08;
+    }
+    if (stock.includes('precision') || stock.includes('sopmod') || stock.includes('ctr')) {
+        modified.recoil *= 0.92;
+    }
+    return modified;
+}
+
+function formatAttachmentText(attachments = {}) {
+    return `MIRA: ${attachments.sight || 'PADRÃO'} • BOCA: ${attachments.muzzle || 'PADRÃO'} • ACESSÓRIO: ${attachments.underbarrel || 'PADRÃO'} • MAG: ${attachments.mag || 'PADRÃO'} • CORONHA: ${attachments.stock || 'PADRÃO'}`;
+}
+
+function calculateDamageAgainstEnemy(enemy, impactPos, baseDamage) {
+    if (!enemy.userData?.isBoss || !enemy.userData?.weakSpots?.length) return baseDamage;
+
+    const phase = enemy.userData.phase || 1;
+    const weakHit = getWeakspotHit(enemy, impactPos, phase);
+
+    if (weakHit) {
+        createImpactSparks(impactPos, 0x66d4ff, 8);
+        enemy.userData.lastWeakspotHit = weakHit.name;
+        return baseDamage * weakHit.multiplier;
+    }
+
+    const armorFactor = phase === 1 ? 0.5 : (phase === 2 ? 0.62 : 0.72);
+    enemy.userData.lastWeakspotHit = 'BLINDADO';
+    return baseDamage * armorFactor;
+}
+
+function getWeakspotHit(enemy, impactPos, phase) {
+    let bestHit = null;
+    let bestDistance = Infinity;
+
+    for (const weakSpot of enemy.userData.weakSpots) {
+        if (phase < (weakSpot.phaseMin || 1)) continue;
+        const worldPos = new THREE.Vector3();
+        weakSpot.node.getWorldPosition(worldPos);
+        const dist = impactPos.distanceTo(worldPos);
+        if (dist <= weakSpot.radius && dist < bestDistance) {
+            bestDistance = dist;
+            bestHit = weakSpot;
+        }
+    }
+    return bestHit;
 }
