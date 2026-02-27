@@ -15,8 +15,8 @@ let lastTime = performance.now();
 
 function init() {
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x789dca);
-    scene.fog = new THREE.Fog(0x789dca, 160, 1400);
+    scene.background = new THREE.Color(0x3a4a63);
+    scene.fog = new THREE.Fog(0x3a4a63, 180, 1200);
     gameState.scene = scene;
 
     const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.05, 1000);
@@ -28,20 +28,20 @@ function init() {
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.25;
+    renderer.toneMappingExposure = 0.92;
     document.getElementById('game-container').appendChild(renderer.domElement);
     gameState.renderer = renderer;
 
     const composer = new EffectComposer(renderer);
     const renderPass = new RenderPass(scene, camera);
-    const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.55, 0.5, 0.82);
+    const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.24, 0.38, 0.9);
     composer.addPass(renderPass);
     composer.addPass(bloomPass);
     gameState.composer = composer;
 
-    const hemiLight = new THREE.HemisphereLight(0xddefff, 0x1a2230, 0.72);
+    const hemiLight = new THREE.HemisphereLight(0x8fa1c2, 0x0f1620, 0.55);
     scene.add(hemiLight);
-    const dirLight = new THREE.DirectionalLight(0xfff4d0, 1.2);
+    const dirLight = new THREE.DirectionalLight(0xffc89a, 0.85);
     dirLight.position.set(100, 200, 50);
     dirLight.castShadow = true;
     dirLight.shadow.mapSize.width = 4096;
@@ -75,13 +75,7 @@ function animate() {
         }
     }
 
-    const dayLerp = (Math.sin(time * 0.00008) + 1) * 0.5;
-    const stormDark = gameState.stormEvent?.intensity || 0;
-    gameState.scene.fog.color.setRGB(
-        0.35 + dayLerp * 0.2 - stormDark * 0.18,
-        0.45 + dayLerp * 0.2 - stormDark * 0.2,
-        0.6 + dayLerp * 0.25 - stormDark * 0.28
-    );
+    gameState.scene.fog.color.setRGB(0.22, 0.29, 0.4);
     gameState.scene.background.copy(gameState.scene.fog.color);
 
     if (gameState.controlsEnabled && !gameState.isGameOver) {
@@ -102,7 +96,7 @@ function applyCameraShake(delta) {
     if (!gameState.camera) return;
 
     const c = gameState.cinematic;
-    const stormShake = (gameState.stormEvent?.intensity || 0) * 0.003;
+    const stormShake = 0;
 
     if (c.shakeTimer > 0) {
         c.shakeTimer = Math.max(0, c.shakeTimer - delta);

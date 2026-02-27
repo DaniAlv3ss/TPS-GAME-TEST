@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { gameState } from './globals.js';
 import * as UI from './ui.js';
-import { playCinematicSting, playDamageSound, playStormSiren, playThunder } from './audio.js';
+import { playCinematicSting, playDamageSound } from './audio.js';
 import { createExplosion, triggerStormEvent } from './effects.js';
 
 const ENEMY_SPEED = 22.0;
@@ -23,12 +23,17 @@ export function updateEnemies(delta, time) {
 
     for(let i = gameState.enemies.length - 1; i >= 0; i--) {
         const e = gameState.enemies[i];
+        const distanceToPlayer = e.position.distanceTo(playerPos);
         let dir = new THREE.Vector3().subVectors(playerPos, e.position).normalize();
         const speedMult = e.userData?.speedMult || 1;
-        const berserkMult = gameState.stormEvent.intensity > 0.35 ? 1.32 : 1;
-        e.position.add(dir.multiplyScalar((ENEMY_SPEED + gameState.wave * 1.5) * speedMult * berserkMult * delta));
+        const moveStep = (ENEMY_SPEED + gameState.wave * 1.5) * speedMult * delta;
+        e.position.add(dir.multiplyScalar(moveStep));
         e.lookAt(playerPos);
         e.rotation.x = Math.sin(time * 0.006 + i) * 0.07;
+
+        if (e.userData?.isSoldier) {
+            updateSoldierAnimation(e, time, delta, moveStep, distanceToPlayer);
+        }
 
         if (e.userData?.isBoss) {
             activeBoss = e;
@@ -39,9 +44,8 @@ export function updateEnemies(delta, time) {
         }
         
         // Dano no Player
-        if(e.position.distanceTo(playerPos) < 15) {
-            const berserkDamage = gameState.stormEvent.intensity > 0.35 ? 1.25 : 1;
-            gameState.health -= 30 * delta * berserkDamage;
+        if(distanceToPlayer < 15) {
+            gameState.health -= 30 * delta;
             UI.updateHealthUI();
             playDamageSound(Math.min(1, delta * 9));
             if(gameState.health <= 0) {
@@ -78,28 +82,24 @@ function spawnEnemy() {
 
     const typeRoll = Math.random();
     const isHeavy = typeRoll > 0.78;
-    const geo = isHeavy ? new THREE.BoxGeometry(13, 22, 13) : new THREE.BoxGeometry(10, 18, 10);
-    const color = isHeavy ? 0x8f3b1b : (typeRoll < 0.35 ? 0x7d2f42 : 0x4e2f7d);
-    const enemy = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color, roughness: 0.75, metalness: 0.1 }));
-
-    const visor = new THREE.Mesh(
-        new THREE.BoxGeometry(isHeavy ? 8 : 6, 2, 1),
-        new THREE.MeshStandardMaterial({ color: 0xaee4ff, emissive: 0x2f8dcc, emissiveIntensity: 0.8 })
-    );
-    visor.position.set(0, isHeavy ? 4 : 3, -5.4);
-    enemy.add(visor);
+    const enemy = createSoldierEnemyModel(isHeavy);
     
     const angle = Math.random() * Math.PI * 2;
     const dist = 600 + Math.random() * 400;
     enemy.position.set(
         gameState.playerContainer.position.x + Math.sin(angle) * dist,
-        15,
+        0,
         gameState.playerContainer.position.z + Math.cos(angle) * dist
     );
     
-    enemy.castShadow = true;
-    enemy.receiveShadow = true;
-    enemy.userData = { health: isHeavy ? 11 + gameState.wave * 0.7 : 6 + gameState.wave * 0.45, isBoss: false };
+    enemy.userData = {
+        ...enemy.userData,
+        health: isHeavy ? 11 + gameState.wave * 0.7 : 6 + gameState.wave * 0.45,
+        isBoss: false,
+        speedMult: isHeavy ? 0.9 : 1,
+        hitReact: 0,
+        hitReactKick: 0
+    };
     gameState.scene.add(enemy);
     gameState.enemies.push(enemy);
 }
@@ -172,15 +172,13 @@ function spawnBoss() {
     gameState.scene.add(boss);
     gameState.enemies.push(boss);
 
-    triggerStormEvent(22);
+    triggerStormEvent(0);
     gameState.cinematic.active = true;
     gameState.cinematic.timer = 0;
     gameState.cinematic.shakeTimer = 0.9;
     gameState.cinematic.shakeIntensity = 0.12;
     UI.showBossThreat(gameState.wave);
     playCinematicSting();
-    playStormSiren();
-    setTimeout(() => playThunder(), 260);
 }
 
 export function onEnemyKilled(enemy) {
@@ -251,5 +249,114 @@ function updateBossPhase(boss, playerPos, delta, time) {
         d.rageShotTimer = 0.55;
         const pulsePos = boss.position.clone().add(new THREE.Vector3(0, 0, 0));
         createExplosion(pulsePos, { radius: 44, life: 0.3, damage: 2.4, color: 0xff3a2a });
+    }
+}
+
+function createSoldierEnemyModel(isHeavy) {
+    const soldier = new THREE.Group();
+    const uniformColor = isHeavy ? 0x2f353d : 0x3b4552;
+    const gearColor = isHeavy ? 0x1f252c : 0x252c36;
+    const skin = new THREE.MeshStandardMaterial({ color: 0xc49b86, roughness: 0.9 });
+    const uniform = new THREE.MeshStandardMaterial({ color: uniformColor, roughness: 0.95, metalness: 0.05 });
+    const gear = new THREE.MeshStandardMaterial({ color: gearColor, roughness: 0.75, metalness: 0.15 });
+
+    const torso = new THREE.Mesh(new THREE.BoxGeometry(isHeavy ? 11 : 10, isHeavy ? 14 : 13, 6), uniform);
+    torso.position.y = 16;
+    torso.castShadow = true;
+    soldier.add(torso);
+
+    const vest = new THREE.Mesh(new THREE.BoxGeometry(isHeavy ? 11.5 : 10.5, isHeavy ? 10 : 9, 6.6), gear);
+    vest.position.set(0, 15.8, -0.2);
+    vest.castShadow = true;
+    soldier.add(vest);
+
+    const head = new THREE.Mesh(new THREE.BoxGeometry(5.4, 6.4, 5.6), skin);
+    head.position.y = 26;
+    head.castShadow = true;
+    soldier.add(head);
+
+    const helmet = new THREE.Mesh(new THREE.BoxGeometry(5.8, 3.2, 6), gear);
+    helmet.position.set(0, 29.2, 0);
+    helmet.castShadow = true;
+    soldier.add(helmet);
+
+    const visor = new THREE.Mesh(
+        new THREE.BoxGeometry(4.9, 1.6, 0.8),
+        new THREE.MeshStandardMaterial({ color: 0x89d7ff, emissive: 0x1d6f9d, emissiveIntensity: 0.7 })
+    );
+    visor.position.set(0, 25.8, -3.2);
+    soldier.add(visor);
+
+    const legGeo = new THREE.BoxGeometry(2.8, 12, 3.2);
+    const leftLeg = new THREE.Mesh(legGeo, uniform);
+    const rightLeg = new THREE.Mesh(legGeo, uniform);
+    leftLeg.position.set(-2.1, 6, 0);
+    rightLeg.position.set(2.1, 6, 0);
+    leftLeg.castShadow = true;
+    rightLeg.castShadow = true;
+    soldier.add(leftLeg);
+    soldier.add(rightLeg);
+
+    const armGeo = new THREE.BoxGeometry(2.4, 10, 2.8);
+    const leftArm = new THREE.Mesh(armGeo, uniform);
+    const rightArm = new THREE.Mesh(armGeo, uniform);
+    leftArm.position.set(-6, 17.5, 0);
+    rightArm.position.set(6, 17.5, 0);
+    leftArm.castShadow = true;
+    rightArm.castShadow = true;
+    soldier.add(leftArm);
+    soldier.add(rightArm);
+
+    const rifle = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.2, 10), gear);
+    rifle.position.set(3.8, 14, -3.8);
+    rifle.rotation.x = -0.25;
+    rifle.rotation.z = 0.22;
+    soldier.add(rifle);
+
+    soldier.userData = {
+        isSoldier: true,
+        anim: {
+            torso,
+            head,
+            leftLeg,
+            rightLeg,
+            leftArm,
+            rightArm,
+            rifle
+        }
+    };
+
+    return soldier;
+}
+
+function updateSoldierAnimation(enemy, time, delta, moveStep, distanceToPlayer) {
+    const anim = enemy.userData?.anim;
+    if (!anim) return;
+
+    const strideSpeed = Math.min(2.2, 0.7 + moveStep * 5.5);
+    const t = time * 0.01 * strideSpeed;
+    const nearTarget = distanceToPlayer < 95 ? 0.45 : 1;
+    const runAmp = 0.62 * nearTarget;
+
+    anim.leftLeg.rotation.x = Math.sin(t) * runAmp;
+    anim.rightLeg.rotation.x = Math.sin(t + Math.PI) * runAmp;
+
+    anim.leftArm.rotation.x = Math.sin(t + Math.PI) * 0.42;
+    anim.rightArm.rotation.x = -0.8 + Math.sin(t) * 0.28;
+
+    anim.rifle.rotation.x = -0.24 + Math.sin(t * 0.45) * 0.05;
+    anim.rifle.rotation.y = Math.cos(t * 0.4) * 0.06;
+
+    anim.torso.rotation.y = Math.sin(t * 0.5) * 0.08;
+    anim.head.rotation.y = Math.sin(t * 0.4) * 0.06;
+
+    if (enemy.userData.hitReact > 0) {
+        enemy.userData.hitReact = Math.max(0, enemy.userData.hitReact - delta * 6.5);
+        const react = enemy.userData.hitReact;
+        const kick = enemy.userData.hitReactKick || 0;
+        anim.torso.rotation.x = -react * 0.45;
+        enemy.position.add(kick.clone().multiplyScalar(delta * 12 * react));
+    } else {
+        anim.torso.rotation.x = THREE.MathUtils.lerp(anim.torso.rotation.x, 0, 0.18);
     }
 }

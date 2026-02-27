@@ -9,8 +9,8 @@ const velocity = new THREE.Vector3();
 const direction = new THREE.Vector3();
 
 // Ajuste para câmera mais alta (estilo tático)
-const normalOffset = new THREE.Vector3(20, 50, 75); 
-const aimOffset = new THREE.Vector3(15, 35, 40); 
+const normalOffset = new THREE.Vector3(18, 48, 70); 
+const aimOffset = new THREE.Vector3(12, 34, 36); 
 
 export function createPlayer() {
     const playerContainer = new THREE.Group();
@@ -21,9 +21,10 @@ export function createPlayer() {
     playerContainer.add(playerGroup);
     gameState.playerGroup = playerGroup;
 
-    const skinMat = new THREE.MeshLambertMaterial({ color: 0xccaa99 });
-    const uniformMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.9 });
-    const vestMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.8 });
+    const skinMat = new THREE.MeshStandardMaterial({ color: 0xcda38a, roughness: 0.82, metalness: 0.02 });
+    const uniformMat = new THREE.MeshStandardMaterial({ color: 0x3f4d5f, roughness: 0.95, metalness: 0.05 });
+    const vestMat = new THREE.MeshStandardMaterial({ color: 0x232b35, roughness: 0.78, metalness: 0.18 });
+    const gearMat = new THREE.MeshStandardMaterial({ color: 0x1a2027, roughness: 0.7, metalness: 0.22 });
 
     // Membros
     const legGeo = new THREE.BoxGeometry(4.5, 14, 5); legGeo.translate(0, -7, 0); 
@@ -33,13 +34,32 @@ export function createPlayer() {
     // AimPivot
     const aimPivot = new THREE.Group(); aimPivot.position.set(0, 16, 0); playerGroup.add(aimPivot); gameState.aimPivot = aimPivot;
 
-    const torsoGeo = new THREE.BoxGeometry(12, 16, 8); torsoGeo.translate(0, 8, 0); 
+    const torsoGeo = new THREE.BoxGeometry(12, 16, 8); torsoGeo.translate(0, 8, 0);
     const torsoMesh = new THREE.Mesh(torsoGeo, vestMat); torsoMesh.castShadow = true; aimPivot.add(torsoMesh); gameState.torsoMesh = torsoMesh;
+
+    const chestRig = new THREE.Mesh(new THREE.BoxGeometry(11.8, 9.5, 7), gearMat);
+    chestRig.position.set(0, 12, -0.3);
+    chestRig.castShadow = true;
+    aimPivot.add(chestRig);
+
+    const shoulderPadL = new THREE.Mesh(new THREE.BoxGeometry(2.3, 4.4, 4.2), gearMat);
+    shoulderPadL.position.set(-7.2, 15.2, 0.2);
+    const shoulderPadR = shoulderPadL.clone();
+    shoulderPadR.position.x = 7.2;
+    aimPivot.add(shoulderPadL);
+    aimPivot.add(shoulderPadR);
 
     const headMesh = new THREE.Group(); headMesh.position.set(0, 18, 0);
     headMesh.add(new THREE.Mesh(new THREE.BoxGeometry(7, 8, 7.5), skinMat));
-    const goggles = new THREE.Mesh(new THREE.BoxGeometry(7.2, 2.5, 2), new THREE.MeshStandardMaterial({color:0x222})); goggles.position.set(0, 1, -3.5); headMesh.add(goggles);
-    const helmet = new THREE.Mesh(new THREE.BoxGeometry(7.5, 4, 8), vestMat); helmet.position.set(0, 4, 0); headMesh.add(helmet);
+    const beard = new THREE.Mesh(new THREE.BoxGeometry(6.8, 2.1, 3), new THREE.MeshStandardMaterial({ color: 0x4e3b2e, roughness: 0.95 }));
+    beard.position.set(0, -2.4, -2.2);
+    headMesh.add(beard);
+    const goggles = new THREE.Mesh(new THREE.BoxGeometry(7.2, 2.5, 2), new THREE.MeshStandardMaterial({color:0x253244, emissive: 0x0f1d2f, emissiveIntensity: 0.25}));
+    goggles.position.set(0, 1, -3.5);
+    headMesh.add(goggles);
+    const helmet = new THREE.Mesh(new THREE.BoxGeometry(7.5, 4, 8), gearMat); helmet.position.set(0, 4, 0); headMesh.add(helmet);
+    const headsetL = new THREE.Mesh(new THREE.BoxGeometry(1, 2.6, 2.4), gearMat); headsetL.position.set(-4.2, 0.8, 0); headMesh.add(headsetL);
+    const headsetR = headsetL.clone(); headsetR.position.x = 4.2; headMesh.add(headsetR);
     aimPivot.add(headMesh); gameState.headMesh = headMesh;
 
     const armGeo = new THREE.BoxGeometry(4, 13, 4); armGeo.translate(0, -5, 0);
@@ -125,20 +145,18 @@ function updateCamera() {
     if(inputs.aimMode === 2) {
         gameState.headMesh.visible = false;
         gameState.torsoMesh.visible = false;
-        
-        const eyePos = new THREE.Vector3();
-        const eyeQuat = new THREE.Quaternion();
-        gameState.cameraFPSPoint.getWorldPosition(eyePos);
-        gameState.cameraFPSPoint.getWorldQuaternion(eyeQuat);
-        gameState.playerContainer.worldToLocal(eyePos);
-        
-        gameState.camera.position.lerp(eyePos, 0.4);
-        gameState.camera.quaternion.slerp(eyeQuat, 0.4);
-        
-        // Sincronia perfeita
-        gameState.camera.rotation.x = gameState.aimPivot.rotation.x;
-        gameState.camera.rotation.y = 0;
-        gameState.camera.rotation.z = 0;
+
+        if (gameState.cameraFPSPoint) {
+            const localEyePos = new THREE.Vector3();
+            gameState.cameraFPSPoint.getWorldPosition(localEyePos);
+            gameState.playerContainer.worldToLocal(localEyePos);
+            gameState.camera.position.lerp(localEyePos, 0.55);
+        }
+
+        const baseQuat = new THREE.Quaternion().copy(gameState.playerContainer.quaternion);
+        const pitchQuat = new THREE.Quaternion().setFromEuler(new THREE.Euler(gameState.aimPivot.rotation.x, 0, 0, 'XYZ'));
+        const desiredQuat = baseQuat.multiply(pitchQuat);
+        gameState.camera.quaternion.slerp(desiredQuat, 0.6);
     } else {
         gameState.headMesh.visible = true;
         gameState.torsoMesh.visible = true;
