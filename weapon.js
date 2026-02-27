@@ -371,7 +371,7 @@ export function updateBullets(delta) {
                 e.position.add(b.userData.velocity.clone().normalize().multiplyScalar(2));
                 if (!e.userData?.isBoss) {
                     e.userData.hitReact = 0.18;
-                    e.userData.hitReactKick = b.userData.velocity.clone().normalize().multiplyScalar(0.35);
+                    e.userData.hitReactKick = b.userData.velocity.clone().setY(0).normalize().multiplyScalar(0.35);
                 }
                 playHitSound();
                 UI.flashHitMarker();
@@ -437,7 +437,7 @@ function createSurfaceImpact(position, normal, color) {
     gameState.decals.push(decal);
     gameState.scene.add(decal);
 
-    if (gameState.decals.length > 120) {
+    if (gameState.decals.length > 80) {
         const old = gameState.decals.shift();
         gameState.scene.remove(old);
     }
@@ -457,7 +457,7 @@ function createImpactSparks(position, color, count) {
         gameState.particles.push(spark);
         gameState.scene.add(spark);
 
-        if (gameState.particles.length > 180) {
+        if (gameState.particles.length > 120) {
             const old = gameState.particles.shift();
             gameState.scene.remove(old);
         }

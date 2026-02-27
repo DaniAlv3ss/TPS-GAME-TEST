@@ -10,9 +10,9 @@ let enemySpawnRate = 2000;
 
 export function updateEnemies(delta, time) {
     // Spawn
-    enemySpawnRate = Math.max(700, 2100 - gameState.wave * 110);
+    enemySpawnRate = Math.max(1100, 2300 - gameState.wave * 80);
 
-    if(time - lastSpawnTime > enemySpawnRate) {
+    if(time - lastSpawnTime > enemySpawnRate && gameState.enemies.length < 20) {
         spawnEnemy();
         lastSpawnTime = time;
     }
@@ -29,7 +29,12 @@ export function updateEnemies(delta, time) {
         const moveStep = (ENEMY_SPEED + gameState.wave * 1.5) * speedMult * delta;
         e.position.add(dir.multiplyScalar(moveStep));
         e.lookAt(playerPos);
-        e.rotation.x = Math.sin(time * 0.006 + i) * 0.07;
+        if (e.userData?.isBoss) e.rotation.x = Math.sin(time * 0.006 + i) * 0.07;
+        else e.rotation.x = 0;
+
+        if (!e.userData?.isBoss) {
+            e.position.y = 0;
+        }
 
         if (e.userData?.isSoldier) {
             updateSoldierAnimation(e, time, delta, moveStep, distanceToPlayer);
@@ -353,9 +358,10 @@ function updateSoldierAnimation(enemy, time, delta, moveStep, distanceToPlayer) 
     if (enemy.userData.hitReact > 0) {
         enemy.userData.hitReact = Math.max(0, enemy.userData.hitReact - delta * 6.5);
         const react = enemy.userData.hitReact;
-        const kick = enemy.userData.hitReactKick || 0;
+        const kick = enemy.userData.hitReactKick || new THREE.Vector3();
         anim.torso.rotation.x = -react * 0.45;
         enemy.position.add(kick.clone().multiplyScalar(delta * 12 * react));
+        enemy.position.y = 0;
     } else {
         anim.torso.rotation.x = THREE.MathUtils.lerp(anim.torso.rotation.x, 0, 0.18);
     }

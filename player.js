@@ -138,7 +138,7 @@ function updateCamera() {
     UI.updateCrosshair(inputs.aimMode);
 
     // Ajuste de FOV para zoom
-    const targetFOV = inputs.aimMode === 1 ? 45 : 60; // Zoom no ombro
+    const targetFOV = inputs.aimMode === 2 ? 50 : (inputs.aimMode === 1 ? 45 : 60);
     gameState.camera.fov = THREE.MathUtils.lerp(gameState.camera.fov, targetFOV, 0.1);
     gameState.camera.updateProjectionMatrix();
 
@@ -150,13 +150,11 @@ function updateCamera() {
             const localEyePos = new THREE.Vector3();
             gameState.cameraFPSPoint.getWorldPosition(localEyePos);
             gameState.playerContainer.worldToLocal(localEyePos);
-            gameState.camera.position.lerp(localEyePos, 0.55);
+            localEyePos.z += 0.35;
+            gameState.camera.position.lerp(localEyePos, 0.72);
         }
 
-        const baseQuat = new THREE.Quaternion().copy(gameState.playerContainer.quaternion);
-        const pitchQuat = new THREE.Quaternion().setFromEuler(new THREE.Euler(gameState.aimPivot.rotation.x, 0, 0, 'XYZ'));
-        const desiredQuat = baseQuat.multiply(pitchQuat);
-        gameState.camera.quaternion.slerp(desiredQuat, 0.6);
+        gameState.camera.rotation.set(gameState.aimPivot.rotation.x, 0, 0);
     } else {
         gameState.headMesh.visible = true;
         gameState.torsoMesh.visible = true;
@@ -172,11 +170,14 @@ function updateCamera() {
     }
 
     if (gameState.gunMesh) {
-        const swayX = Math.sin(performance.now() * 0.005) * 0.04;
-        const swayY = Math.cos(performance.now() * 0.004) * 0.03;
+        const isFps = inputs.aimMode === 2;
+        const swayScale = isFps ? 0.14 : 1;
+        const swayX = Math.sin(performance.now() * 0.005) * 0.04 * swayScale;
+        const swayY = Math.cos(performance.now() * 0.004) * 0.03 * swayScale;
         const baseX = gameState.gunMesh.userData.baseRotX || 0;
         const baseY = gameState.gunMesh.userData.baseRotY || 0;
-        gameState.gunMesh.rotation.y = THREE.MathUtils.lerp(gameState.gunMesh.rotation.y, baseY + swayX, 0.06);
-        gameState.gunMesh.rotation.x = THREE.MathUtils.lerp(gameState.gunMesh.rotation.x, baseX + swayY, 0.06);
+        const lerpFactor = isFps ? 0.2 : 0.06;
+        gameState.gunMesh.rotation.y = THREE.MathUtils.lerp(gameState.gunMesh.rotation.y, baseY + swayX, lerpFactor);
+        gameState.gunMesh.rotation.x = THREE.MathUtils.lerp(gameState.gunMesh.rotation.x, baseX + swayY, lerpFactor);
     }
 }

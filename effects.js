@@ -18,12 +18,21 @@ export function triggerStormEvent(duration = 20) {
 }
 
 export function createExplosion(position, config = {}) {
+    if (gameState.explosions.length > 14) {
+        const old = gameState.explosions.shift();
+        if (old) {
+            gameState.scene.remove(old.shockwave);
+            gameState.scene.remove(old.core);
+            gameState.scene.remove(old.light);
+        }
+    }
+
     const radius = config.radius ?? 60;
     const maxLife = config.life ?? 0.75;
     const damage = config.damage ?? 4;
 
     const shockwave = new THREE.Mesh(
-        new THREE.RingGeometry(2, 3.5, 32),
+        new THREE.RingGeometry(2, 3.5, 20),
         new THREE.MeshBasicMaterial({ color: config.color ?? 0xffaa55, transparent: true, opacity: 0.8, side: THREE.DoubleSide })
     );
     shockwave.position.copy(position);
@@ -31,7 +40,7 @@ export function createExplosion(position, config = {}) {
     shockwave.rotation.x = -Math.PI / 2;
 
     const core = new THREE.Mesh(
-        new THREE.SphereGeometry(2.6, 12, 12),
+        new THREE.SphereGeometry(2.6, 8, 8),
         new THREE.MeshBasicMaterial({ color: 0xffddaa, transparent: true, opacity: 0.85 })
     );
     core.position.copy(position);
@@ -97,8 +106,9 @@ function applyShockwaveDamage(exp, currentRadius) {
         if (distance <= currentRadius) {
             exp.hitEnemies.add(enemy);
             enemy.userData.health -= exp.damage;
-            const push = new THREE.Vector3().subVectors(enemy.position, exp.shockwave.position).normalize().multiplyScalar(9);
+            const push = new THREE.Vector3().subVectors(enemy.position, exp.shockwave.position).setY(0).normalize().multiplyScalar(9);
             enemy.position.add(push);
+            if (!enemy.userData?.isBoss) enemy.position.y = 0;
 
             if (enemy.userData.health <= 0) {
                 const isBoss = enemy.userData?.isBoss;
