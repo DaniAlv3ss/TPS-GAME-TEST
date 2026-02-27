@@ -8,6 +8,7 @@ export const inputs = {
     canJump: false,
     isLeftMouseDown: false,
     isRightMouseDown: false,
+    isNewClick: false,
     isBPressed: false,
     jumpPressed: false,
     isSprinting: false,

@@ -34,7 +34,7 @@ export function createMap() {
         box.receiveShadow = true;
         gameState.scene.add(box);
         
-        box.isObstacle = true;
+        box.userData.isObstacle = true;
         gameState.obstacles.push(box);
     }
 
